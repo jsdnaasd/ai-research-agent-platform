@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="panel">
+  <p class="pill">Evidence Explorer</p>
+  <h1>Evidence Explorer</h1>
+  {% for finding in findings %}
+  <article>
+    <h2>{{ finding.claim }}</h2>
+    <p class="muted">Citations: {{ finding.citations | join(", ") }}</p>
+  </article>
+  {% endfor %}
+</section>
+{% endblock %}

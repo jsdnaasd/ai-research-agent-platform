@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{{ title or "AI Research Agent Platform" }}</title>
+    <style>
+      :root {
+        --bg: #f4efe6;
+        --panel: #fffaf2;
+        --ink: #1f2933;
+        --accent: #005f73;
+        --muted: #6c7a89;
+        --border: #d7c9b6;
+      }
+      body {
+        margin: 0;
+        font-family: Georgia, "Times New Roman", serif;
+        color: var(--ink);
+        background:
+          radial-gradient(circle at top left, #f7d9aa 0, transparent 28%),
+          linear-gradient(135deg, #f4efe6 0%, #efe3d2 100%);
+      }
+      main {
+        max-width: 980px;
+        margin: 0 auto;
+        padding: 32px 20px 56px;
+      }
+      .panel {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        padding: 20px;
+        box-shadow: 0 10px 35px rgba(44, 55, 71, 0.08);
+      }
+      .meta, .muted { color: var(--muted); }
+      nav a {
+        color: var(--accent);
+        text-decoration: none;
+        margin-right: 16px;
+        font-weight: 700;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 16px;
+      }
+      .pill {
+        display: inline-block;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        padding: 4px 10px;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+      ul { padding-left: 20px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <nav>
+        <a href="/tasks/{{ task_id }}">Overview</a>
+        <a href="/tasks/{{ task_id }}/briefs">Round Board</a>
+        <a href="/tasks/{{ task_id }}/evidence">Evidence</a>
+        <a href="/tasks/{{ task_id }}/report">Report</a>
+      </nav>
+      {% block content %}{% endblock %}
+    </main>
+  </body>
+</html>

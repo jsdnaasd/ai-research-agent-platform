@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="panel">
+  <p class="pill">Round Board</p>
+  <h1>Brief Execution Board</h1>
+  <ul>
+    {% for brief in briefs %}
+    <li>{{ brief.id }} - {{ brief.question }} - {{ brief.status }}</li>
+    {% endfor %}
+  </ul>
+</section>
+{% endblock %}

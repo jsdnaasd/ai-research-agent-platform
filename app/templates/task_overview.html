@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="panel">
+  <p class="pill">Task Overview</p>
+  <h1>Research Task {{ task_id }}</h1>
+  <p class="meta">Round-based supervised multi-agent execution with critic review.</p>
+  <div class="grid">
+    <div>
+      <h2>Rounds</h2>
+      <ul>
+        {% for round in rounds %}
+        <li>Round {{ round.id }}: {{ round.stage }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+    <div>
+      <h2>Brief Count</h2>
+      <p>{{ brief_count }}</p>
+      <a href="/tasks/{{ task_id }}/briefs">Round Board</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

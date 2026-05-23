@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="panel">
+  <p class="pill">Final Report</p>
+  <h1>{{ template_type.replace("_", " ").title() }}</h1>
+  <ul>
+    {% for finding in findings %}
+    <li>{{ finding.claim }} ({{ finding.citations | join(", ") }})</li>
+    {% endfor %}
+  </ul>
+</section>
+{% endblock %}
