@@ -1,21 +1,43 @@
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from fastapi import APIRouter, Depends, HTTPException, Request
-from fastapi.responses import HTMLResponse
+from fastapi import APIRouter, Depends, Form, HTTPException, Request, status
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
 from app.db import get_db
-from app.models.brief import ResearchBrief
-from app.models.finding import ResearchFinding
-from app.models.report import ResearchReport
 from app.models.round import ResearchRound
-from app.models.source import ResearchSource
-from app.models.source_fragment import ResearchSourceFragment
-from app.services.tasks import get_task_detail
+from app.schemas.task import CreateTaskRequest
+from app.services.tasks import create_task as create_task_record
+from app.services.tasks import get_report, get_task_detail, list_briefs, list_evidence, list_tasks
+from app.worker import run_research_task
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
+
+
+@router.get("/", response_class=HTMLResponse)
+def homepage(request: Request, session: Session = Depends(get_db)) -> HTMLResponse:
+    return templates.TemplateResponse(
+        request,
+        "home.html",
+        {"tasks": list_tasks(session)},
+    )
+
+
+@router.post("/tasks/new")
+def create_task_from_form(
+    topic: str = Form(...),
+    template_type: str = Form(...),
+    user_context: str | None = Form(default=None),
+    session: Session = Depends(get_db),
+) -> RedirectResponse:
+    task = create_task_record(
+        session,
+        CreateTaskRequest(topic=topic, template_type=template_type, user_context=user_context),
+    )
+    run_research_task.delay(task.id)
+    return RedirectResponse(url=f"/tasks/{task.id}", status_code=status.HTTP_303_SEE_OTHER)
 
 
 @router.get("/tasks/{task_id}", response_class=HTMLResponse)
@@ -45,9 +67,7 @@ def brief_board(request: Request, task_id: str, session: Session = Depends(get_d
     if task is None:
         raise HTTPException(status_code=404, detail="Task not found")
 
-    briefs = session.scalars(
-        select(ResearchBrief).join(ResearchRound).where(ResearchRound.task_id == task_id).order_by(ResearchBrief.priority.asc())
-    ).all()
+    briefs = list_briefs(session, task_id)
     return templates.TemplateResponse(
         request,
         "brief_board.html",
@@ -65,23 +85,10 @@ def evidence_explorer(request: Request, task_id: str, session: Session = Depends
     if task is None:
         raise HTTPException(status_code=404, detail="Task not found")
 
-    findings = session.scalars(
-        select(ResearchFinding).join(ResearchBrief).join(ResearchRound).where(ResearchRound.task_id == task_id)
-    ).all()
-    fragments = session.scalars(
-        select(ResearchSourceFragment).join(ResearchSource).where(ResearchSource.task_id == task_id)
-    ).all()
-    evidence_rows = [
-        {
-            "claim": finding.claim,
-            "citations": [fragment.citation_label for fragment in fragments],
-        }
-        for finding in findings
-    ]
     return templates.TemplateResponse(
         request,
         "evidence_explorer.html",
-        {"task_id": task_id, "task": task, "findings": evidence_rows},
+        {"task_id": task_id, "task": task, "findings": list_evidence(session, task_id)},
     )
 
 
@@ -91,7 +98,7 @@ def report_page(request: Request, task_id: str, session: Session = Depends(get_d
     if task is None:
         raise HTTPException(status_code=404, detail="Task not found")
 
-    report = session.scalar(select(ResearchReport).where(ResearchReport.task_id == task_id))
+    report = get_report(session, task_id)
     if report is None:
         raise HTTPException(status_code=404, detail="Report not found")
 

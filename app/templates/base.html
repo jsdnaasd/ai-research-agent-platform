@@ -60,10 +60,13 @@
   <body>
     <main>
       <nav>
+        <a href="/">Home</a>
+        {% if task_id %}
         <a href="/tasks/{{ task_id }}">Overview</a>
         <a href="/tasks/{{ task_id }}/briefs">Round Board</a>
         <a href="/tasks/{{ task_id }}/evidence">Evidence</a>
         <a href="/tasks/{{ task_id }}/report">Report</a>
+        {% endif %}
       </nav>
       {% block content %}{% endblock %}
     </main>

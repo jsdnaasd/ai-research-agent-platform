@@ -8,6 +8,7 @@ from app.schemas.finding import AcceptedFinding
 from app.db import SessionLocal
 from app.models.brief import ResearchBrief
 from app.models.finding import ResearchFinding
+from app.models.finding_source_fragment import ResearchFindingSourceFragment
 from app.models.report import ResearchReport
 from app.models.round import ResearchRound
 from app.models.source import ResearchSource
@@ -104,6 +105,7 @@ class Orchestrator:
 
                     output = researcher.research(planned_brief)
                     researcher_outputs.append(output)
+                    fragment_rows: list[ResearchSourceFragment] = []
 
                     for index, result in enumerate(output.sources[:2]):
                         source_row = ResearchSource(
@@ -125,6 +127,8 @@ class Orchestrator:
                             offset_end=fragment_payload.offset_end,
                         )
                         session.add(fragment_row)
+                        session.flush()
+                        fragment_rows.append(fragment_row)
 
                     finding_row = ResearchFinding(
                         brief_id=brief_row.id,
@@ -132,6 +136,14 @@ class Orchestrator:
                         confidence=output.finding.confidence,
                     )
                     session.add(finding_row)
+                    session.flush()
+                    for fragment_row in fragment_rows:
+                        session.add(
+                            ResearchFindingSourceFragment(
+                                finding_id=finding_row.id,
+                                source_fragment_id=fragment_row.id,
+                            )
+                        )
 
                 session.flush()
 

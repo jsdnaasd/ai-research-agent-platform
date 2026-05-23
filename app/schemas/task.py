@@ -21,3 +21,20 @@ class TaskDetailResponse(TaskResponse):
     finding_count: int
     source_count: int
     report_ready: bool
+
+
+class BriefResponse(BaseModel):
+    id: str
+    question: str
+    priority: int
+    status: str
+
+
+class EvidenceResponse(BaseModel):
+    claim: str
+    citations: list[str]
+
+
+class ReportResponse(BaseModel):
+    markdown_content: str
+    html_content: str

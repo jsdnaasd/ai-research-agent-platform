@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="panel">
+  <p class="pill">AI Research Agent Platform</p>
+  <h1>Start Research Task</h1>
+  <p class="meta">Queue a company or market research job and inspect the brief board, evidence trail, and final report.</p>
+  <form action="/tasks/new" method="post">
+    <div class="grid">
+      <label>
+        Topic
+        <input name="topic" value="OpenAI competitors" />
+      </label>
+      <label>
+        Template
+        <select name="template_type">
+          <option value="market_scan">market_scan</option>
+          <option value="company_brief">company_brief</option>
+          <option value="competitor_snapshot">competitor_snapshot</option>
+        </select>
+      </label>
+    </div>
+    <label>
+      User Context
+      <textarea name="user_context" rows="4">Focus on SMB pricing signals</textarea>
+    </label>
+  </form>
+</section>
+<section class="panel" style="margin-top: 18px;">
+  <p class="pill">Recent Runs</p>
+  <ul>
+    {% for task in tasks %}
+    <li><a href="/tasks/{{ task.id }}">{{ task.topic }}</a> · {{ task.status }}</li>
+    {% else %}
+    <li>No tasks yet.</li>
+    {% endfor %}
+  </ul>
+</section>
+{% endblock %}

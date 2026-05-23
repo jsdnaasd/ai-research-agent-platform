@@ -1,20 +1,19 @@
-from fastapi.testclient import TestClient
-
 from app.db import SessionLocal
 from app.main import app
 from app.models.brief import ResearchBrief
 from app.models.finding import ResearchFinding
+from app.models.finding_source_fragment import ResearchFindingSourceFragment
 from app.models.report import ResearchReport
 from app.models.round import ResearchRound
 from app.models.source import ResearchSource
-from app.models.finding_source_fragment import ResearchFindingSourceFragment
 from app.models.source_fragment import ResearchSourceFragment
 from app.models.task import ResearchTask
+from fastapi.testclient import TestClient
 
 
-def _seed_task_graph() -> str:
+def _seed_artifact_graph() -> str:
     with SessionLocal() as session:
-        task = ResearchTask(topic="OpenAI competitors", template_type="market_scan")
+        task = ResearchTask(topic="Artifact task", template_type="market_scan")
         session.add(task)
         session.flush()
 
@@ -28,8 +27,8 @@ def _seed_task_graph() -> str:
 
         source = ResearchSource(
             task_id=task.id,
-            source_url="https://example.com/pricing",
-            source_title="Pricing",
+            source_url="https://example.com",
+            source_title="Example",
             provider="fake",
             raw_content="Pricing starts at $29",
         )
@@ -46,19 +45,15 @@ def _seed_task_graph() -> str:
         session.add(fragment)
         session.flush()
 
-        finding = ResearchFinding(brief_id=brief.id, claim="SMB pricing starts at $29", confidence=0.9)
+        finding = ResearchFinding(brief_id=brief.id, claim="Pricing starts at $29", confidence=0.9)
         session.add(finding)
         session.flush()
-        session.add(
-            ResearchFindingSourceFragment(
-                finding_id=finding.id,
-                source_fragment_id=fragment.id,
-            )
-        )
+
+        session.add(ResearchFindingSourceFragment(finding_id=finding.id, source_fragment_id=fragment.id))
         session.add(
             ResearchReport(
                 task_id=task.id,
-                markdown_content="# Market Scan\n- SMB pricing starts at $29 (fragment-1)",
+                markdown_content="# Market Scan\n- Pricing starts at $29",
                 html_content="<h1>Market Scan</h1>",
             )
         )
@@ -66,24 +61,35 @@ def _seed_task_graph() -> str:
         return task.id
 
 
-def test_task_overview_page_renders_round_board_link() -> None:
-    task_id = _seed_task_graph()
+def test_get_task_briefs_returns_persisted_briefs() -> None:
+    task_id = _seed_artifact_graph()
     client = TestClient(app)
 
-    response = client.get(f"/tasks/{task_id}")
+    response = client.get(f"/api/tasks/{task_id}/briefs")
 
     assert response.status_code == 200
-    assert "Round Board" in response.text
-    assert "OpenAI competitors" in response.text
+    payload = response.json()
+    assert payload[0]["question"] == "pricing"
 
 
-def test_evidence_page_renders_finding_heading() -> None:
-    task_id = _seed_task_graph()
+def test_get_task_evidence_returns_citations_per_finding() -> None:
+    task_id = _seed_artifact_graph()
     client = TestClient(app)
 
-    response = client.get(f"/tasks/{task_id}/evidence")
+    response = client.get(f"/api/tasks/{task_id}/evidence")
 
     assert response.status_code == 200
-    assert "Evidence Explorer" in response.text
-    assert "SMB pricing starts at $29" in response.text
-    assert "fragment-1" in response.text
+    payload = response.json()
+    assert payload[0]["claim"] == "Pricing starts at $29"
+    assert payload[0]["citations"] == ["fragment-1"]
+
+
+def test_get_task_report_returns_persisted_report() -> None:
+    task_id = _seed_artifact_graph()
+    client = TestClient(app)
+
+    response = client.get(f"/api/tasks/{task_id}/report")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert "Market Scan" in payload["markdown_content"]

@@ -68,6 +68,12 @@ def upgrade() -> None:
         sa.Column("confidence", sa.Float(), nullable=False, server_default="0"),
     )
     op.create_table(
+        "research_finding_source_fragments",
+        sa.Column("id", sa.String(length=36), primary_key=True),
+        sa.Column("finding_id", sa.String(length=36), sa.ForeignKey("research_findings.id"), nullable=False),
+        sa.Column("source_fragment_id", sa.String(length=36), sa.ForeignKey("research_source_fragments.id"), nullable=False),
+    )
+    op.create_table(
         "research_gaps",
         sa.Column("id", sa.String(length=36), primary_key=True),
         sa.Column("brief_id", sa.String(length=36), sa.ForeignKey("research_briefs.id"), nullable=False),
@@ -85,6 +91,7 @@ def upgrade() -> None:
 def downgrade() -> None:
     op.drop_table("research_reports")
     op.drop_table("research_gaps")
+    op.drop_table("research_finding_source_fragments")
     op.drop_table("research_findings")
     op.drop_table("research_source_fragments")
     op.drop_table("research_sources")
