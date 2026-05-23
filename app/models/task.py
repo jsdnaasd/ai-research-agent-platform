@@ -27,6 +27,7 @@ class ResearchTask(Base):
     user_context: Mapped[str | None] = mapped_column(Text(), nullable=True, default=None)
     status: Mapped[TaskStatus] = mapped_column(Enum(TaskStatus), default=TaskStatus.QUEUED)
     current_round: Mapped[int] = mapped_column(Integer, default=0)
+    error_message: Mapped[str | None] = mapped_column(Text(), nullable=True, default=None)
 
     def __init__(self, **kwargs: object) -> None:
         kwargs.setdefault("status", TaskStatus.QUEUED)

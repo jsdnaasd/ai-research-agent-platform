@@ -26,6 +26,7 @@ def upgrade() -> None:
         sa.Column("user_context", sa.Text(), nullable=True),
         sa.Column("status", sa.String(length=64), nullable=False),
         sa.Column("current_round", sa.Integer(), nullable=False, server_default="0"),
+        sa.Column("error_message", sa.Text(), nullable=True),
     )
     op.create_table(
         "research_rounds",

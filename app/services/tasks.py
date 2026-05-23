@@ -45,6 +45,7 @@ def to_task_response(task: ResearchTask) -> TaskResponse:
         user_context=task.user_context,
         status=task.status.value,
         current_round=task.current_round,
+        error_message=task.error_message,
     )
 
 
@@ -67,6 +68,7 @@ def get_task_detail(session: Session, task_id: str) -> TaskDetailResponse | None
         user_context=task.user_context,
         status=task.status.value,
         current_round=task.current_round,
+        error_message=task.error_message,
         brief_count=int(brief_count),
         finding_count=int(finding_count),
         source_count=int(source_count),

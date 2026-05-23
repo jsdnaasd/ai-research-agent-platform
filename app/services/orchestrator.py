@@ -76,6 +76,7 @@ class Orchestrator:
             try:
                 task.status = TaskStatus.RUNNING
                 task.current_round = 1
+                task.error_message = None
                 round_row = ResearchRound(task_id=task.id, round_number=1, stage="planning")
                 session.add(round_row)
                 session.flush()
@@ -171,8 +172,9 @@ class Orchestrator:
                 round_row.stage = "round_closed"
                 task.status = TaskStatus.COMPLETED
                 session.commit()
-            except Exception:
+            except Exception as exc:
                 task.status = TaskStatus.FAILED
+                task.error_message = str(exc)
                 session.commit()
                 raise
 

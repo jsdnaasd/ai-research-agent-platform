@@ -14,6 +14,7 @@ class TaskResponse(BaseModel):
     user_context: str | None
     status: str
     current_round: int
+    error_message: str | None = None
 
 
 class TaskDetailResponse(TaskResponse):

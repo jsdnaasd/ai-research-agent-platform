@@ -4,6 +4,9 @@
   <p class="pill">Task Overview</p>
   <h1>{{ task.topic }}</h1>
   <p class="meta">{{ task.template_type }} · status {{ task.status }} · round {{ task.current_round }}</p>
+  {% if task.error_message %}
+  <p class="muted">Last error: {{ task.error_message }}</p>
+  {% endif %}
   <div class="grid">
     <div>
       <h2>Rounds</h2>
