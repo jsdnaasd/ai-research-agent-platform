@@ -15,3 +15,5 @@ class ResearchSource(Base):
     task_id: Mapped[str] = mapped_column(ForeignKey("research_tasks.id"))
     source_url: Mapped[str] = mapped_column(Text())
     source_title: Mapped[str] = mapped_column(Text(), default="")
+    provider: Mapped[str] = mapped_column(String(64), default="tavily")
+    raw_content: Mapped[str] = mapped_column(Text(), default="")

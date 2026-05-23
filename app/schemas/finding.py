@@ -23,3 +23,10 @@ class AcceptedFinding(BaseModel):
     brief_id: str
     claim: str
     citations: list[str]
+
+
+class SourceFragmentPayload(BaseModel):
+    citation_label: str
+    content: str
+    offset_start: int = 0
+    offset_end: int = 0

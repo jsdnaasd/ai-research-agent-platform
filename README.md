@@ -16,6 +16,7 @@ Supervised multi-agent research platform for evidence-grounded company intellige
 python -m venv .venv
 source .venv/bin/activate
 pip install -e ".[dev]"
+alembic upgrade head
 uvicorn app.main:app --reload
 ```
 
@@ -33,3 +34,9 @@ pytest
 - `/tasks/demo-task/briefs`
 - `/tasks/demo-task/evidence`
 - `/tasks/demo-task/report`
+
+## Required environment
+
+- `APP_DATABASE_URL`
+- `APP_REDIS_URL`
+- `APP_TAVILY_API_KEY`
