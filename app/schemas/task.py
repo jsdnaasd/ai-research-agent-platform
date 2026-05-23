@@ -14,3 +14,10 @@ class TaskResponse(BaseModel):
     user_context: str | None
     status: str
     current_round: int
+
+
+class TaskDetailResponse(TaskResponse):
+    brief_count: int
+    finding_count: int
+    source_count: int
+    report_ready: bool

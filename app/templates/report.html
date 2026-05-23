@@ -2,11 +2,8 @@
 {% block content %}
 <section class="panel">
   <p class="pill">Final Report</p>
-  <h1>{{ template_type.replace("_", " ").title() }}</h1>
-  <ul>
-    {% for finding in findings %}
-    <li>{{ finding.claim }} ({{ finding.citations | join(", ") }})</li>
-    {% endfor %}
-  </ul>
+  <h1>{{ task.topic }}</h1>
+  <p class="meta">{{ template_type.replace("_", " ").title() }}</p>
+  <pre>{{ report.markdown_content }}</pre>
 </section>
 {% endblock %}

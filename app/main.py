@@ -6,8 +6,11 @@ from sqlalchemy.orm import Session
 
 from app.config import settings
 from app.db import get_db, init_db
-from app.schemas.task import CreateTaskRequest, TaskResponse
+from fastapi import HTTPException
+
+from app.schemas.task import CreateTaskRequest, TaskDetailResponse, TaskResponse
 from app.services.tasks import create_task as create_task_record
+from app.services.tasks import get_task_detail
 from app.services.tasks import to_task_response
 from app.web.routes import router as web_router
 from app.worker import run_research_task
@@ -35,3 +38,11 @@ def create_task(payload: CreateTaskRequest, session: Session = Depends(get_db)) 
     response = to_task_response(task)
     run_research_task.delay(task.id)
     return response
+
+
+@app.get("/api/tasks/{task_id}", response_model=TaskDetailResponse)
+def get_task(task_id: str, session: Session = Depends(get_db)) -> TaskDetailResponse:
+    task = get_task_detail(session, task_id)
+    if task is None:
+        raise HTTPException(status_code=404, detail="Task not found")
+    return task
