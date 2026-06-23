@@ -2,6 +2,7 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 from fastapi import Depends, FastAPI, status
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.config import settings
@@ -30,6 +31,12 @@ app.include_router(web_router)
 @app.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
+
+
+@app.get("/health/detailed")
+def detailed_health(session: Session = Depends(get_db)) -> dict[str, str]:
+    session.execute(text("select 1"))
+    return {"status": "ok", "database": "ok"}
 
 
 @app.post("/api/tasks", response_model=TaskResponse, status_code=status.HTTP_201_CREATED)

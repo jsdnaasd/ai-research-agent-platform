@@ -53,6 +53,7 @@ make docker-up
 ## Key routes
 
 - `/health`
+- `/health/detailed`
 - `/api/tasks`
 - `/api/tasks/{id}`
 - `/api/tasks/{id}/briefs`
