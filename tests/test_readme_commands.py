@@ -6,3 +6,5 @@ def test_readme_mentions_main_local_commands() -> None:
 
     assert "uvicorn app.main:app --reload" in readme
     assert "pytest" in readme
+    assert "docker compose up --build" in readme
+    assert "make docker-up" in readme

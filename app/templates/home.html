@@ -29,7 +29,7 @@
   <p class="pill">Recent Runs</p>
   <ul>
     {% for task in tasks %}
-    <li><a href="/tasks/{{ task.id }}">{{ task.topic }}</a> · {{ task.status }}</li>
+    <li><a href="/tasks/{{ task.id }}">{{ task.topic }}</a> · {{ task.status }} · {{ task.created_at }}</li>
     {% else %}
     <li>No tasks yet.</li>
     {% endfor %}

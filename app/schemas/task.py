@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from pydantic import BaseModel
 
 
@@ -15,6 +17,8 @@ class TaskResponse(BaseModel):
     status: str
     current_round: int
     error_message: str | None = None
+    created_at: datetime
+    updated_at: datetime
 
 
 class TaskDetailResponse(TaskResponse):

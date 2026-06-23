@@ -20,20 +20,49 @@ alembic upgrade head
 uvicorn app.main:app --reload
 ```
 
+## Docker setup
+
+```bash
+docker compose up --build
+```
+
+This starts:
+
+- `web` on `http://localhost:8000`
+- `worker` for background research execution
+- `db` on PostgreSQL 16
+- `redis` on Redis 7
+
 ## Run tests
 
 ```bash
 pytest
 ```
 
+## Common commands
+
+```bash
+make install
+make migrate
+make run
+make worker
+make test
+make docker-up
+```
+
 ## Key routes
 
 - `/health`
 - `/api/tasks`
-- `/tasks/demo-task`
-- `/tasks/demo-task/briefs`
-- `/tasks/demo-task/evidence`
-- `/tasks/demo-task/report`
+- `/api/tasks/{id}`
+- `/api/tasks/{id}/briefs`
+- `/api/tasks/{id}/evidence`
+- `/api/tasks/{id}/report`
+- `/`
+- `/tasks/{id}`
+- `/tasks/{id}/briefs`
+- `/tasks/{id}/evidence`
+- `/tasks/{id}/report`
 
 ## Required environment
 

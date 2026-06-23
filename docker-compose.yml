@@ -1,0 +1,54 @@
+services:
+  web:
+    build: .
+    command: /app/scripts/start-web.sh
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env.example
+    environment:
+      APP_DATABASE_URL: postgresql+psycopg://postgres:postgres@db:5432/research_agent
+      APP_REDIS_URL: redis://redis:6379/0
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+  worker:
+    build: .
+    command: /app/scripts/start-worker.sh
+    env_file:
+      - .env.example
+    environment:
+      APP_DATABASE_URL: postgresql+psycopg://postgres:postgres@db:5432/research_agent
+      APP_REDIS_URL: redis://redis:6379/0
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: research_agent
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d research_agent"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+
+volumes:
+  postgres_data:

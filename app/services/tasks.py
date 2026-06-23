@@ -46,6 +46,8 @@ def to_task_response(task: ResearchTask) -> TaskResponse:
         status=task.status.value,
         current_round=task.current_round,
         error_message=task.error_message,
+        created_at=task.created_at,
+        updated_at=task.updated_at,
     )
 
 
@@ -69,6 +71,8 @@ def get_task_detail(session: Session, task_id: str) -> TaskDetailResponse | None
         status=task.status.value,
         current_round=task.current_round,
         error_message=task.error_message,
+        created_at=task.created_at,
+        updated_at=task.updated_at,
         brief_count=int(brief_count),
         finding_count=int(finding_count),
         source_count=int(source_count),
@@ -77,7 +81,7 @@ def get_task_detail(session: Session, task_id: str) -> TaskDetailResponse | None
 
 
 def list_tasks(session: Session, limit: int = 10) -> list[TaskResponse]:
-    tasks = session.scalars(select(ResearchTask).order_by(ResearchTask.id.desc()).limit(limit)).all()
+    tasks = session.scalars(select(ResearchTask).order_by(ResearchTask.created_at.desc()).limit(limit)).all()
     return [to_task_response(task) for task in tasks]
 
 
