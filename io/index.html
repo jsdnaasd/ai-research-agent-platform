@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AI Research Agent Platform</title>
+    <meta name="description" content="A supervised multi-agent research backend with evidence-backed reports, FastAPI, Celery, PostgreSQL, and Tavily search." />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="#">AI Research Agent Platform</a>
+      <nav class="nav">
+        <a href="#run">Run</a>
+        <a href="#terminal">Terminal</a>
+        <a href="#demo">Demo</a>
+        <a href="#architecture">Architecture</a>
+        <a href="https://github.com/jsdnaasd/ai-research-agent-platform">GitHub</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div class="inner hero-grid">
+          <div>
+            <p class="eyebrow">No images. Just the system.</p>
+            <h1>Evidence-backed research agents you can inspect.</h1>
+            <p class="lead">
+              A FastAPI + Celery + PostgreSQL project for company research and market scans.
+              中文说就是：任务会排队执行，brief、source、fragment、finding、report 都会落库，最后报告能追到证据片段。
+            </p>
+            <div class="actions">
+              <a class="button primary" href="#terminal">Try the API calls</a>
+              <a class="button" href="https://github.com/jsdnaasd/ai-research-agent-platform">Read the source</a>
+            </div>
+          </div>
+          <div class="terminal" aria-label="Project quickstart command block">
+            <div class="terminal-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+            <pre><code>git clone https://github.com/jsdnaasd/ai-research-agent-platform.git
+cd ai-research-agent-platform
+cp .env.example .env
+
+# set APP_TAVILY_API_KEY in .env
+docker compose up --build
+
+curl -s http://localhost:8000/health/detailed | jq</code></pre>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="inner grid-3">
+          <article class="card">
+            <h3>Problem</h3>
+            <p class="muted">
+              AI research tools often return a clean answer but hide the trail. That is not enough for client work.
+            </p>
+          </article>
+          <article class="card">
+            <h3>Implementation</h3>
+            <p class="muted">
+              The app uses FastAPI for HTTP, Celery for background execution, Redis as broker, PostgreSQL for state,
+              Alembic for migrations, and Tavily for live search.
+            </p>
+          </article>
+          <article class="card">
+            <h3>Output</h3>
+            <p class="muted">
+              Reports are built from accepted findings. Findings link back to source fragments, so claims can be checked.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section class="section" id="run">
+        <div class="inner split">
+          <div>
+            <h2>Run it locally</h2>
+            <p class="lead">
+              The fastest way to evaluate the project is Docker Compose. It brings up the API, worker, Redis, and PostgreSQL.
+            </p>
+            <ul class="list">
+              <li>Set `APP_TAVILY_API_KEY` before creating real research tasks.</li>
+              <li>Use `/health/detailed` to verify database connectivity.</li>
+              <li>Use worker logs to watch task execution.</li>
+              <li>Use the API routes to inspect every artifact created by the run.</li>
+            </ul>
+          </div>
+          <div class="terminal">
+            <div class="terminal-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+            <pre><code>cp .env.example .env
+
+# edit APP_TAVILY_API_KEY
+docker compose up --build
+
+docker compose logs -f worker
+docker compose exec api alembic upgrade head
+docker compose down</code></pre>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="terminal">
+        <div class="inner">
+          <h2>Terminal usage</h2>
+          <p class="lead">
+            These are the calls you would actually use while checking the system. Replace `TASK_ID` with the id returned by the create call.
+          </p>
+          <div class="command-grid">
+            <article class="terminal">
+              <div class="terminal-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+              <pre><code>curl -s -X POST http://localhost:8000/api/tasks \
+  -H "content-type: application/json" \
+  -d '{
+    "topic": "OpenAI competitors",
+    "template_type": "market_scan",
+    "user_context": "Focus on SMB pricing and positioning."
+  }' | jq</code></pre>
+            </article>
+            <article class="terminal">
+              <div class="terminal-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+              <pre><code>TASK_ID="paste-id-here"
+
+curl -s "http://localhost:8000/api/tasks/$TASK_ID" | jq
+curl -s "http://localhost:8000/api/tasks/$TASK_ID/briefs" | jq
+curl -s "http://localhost:8000/api/tasks/$TASK_ID/evidence" | jq
+curl -s "http://localhost:8000/api/tasks/$TASK_ID/report" \
+  | jq -r .markdown_content</code></pre>
+            </article>
+            <article class="terminal">
+              <div class="terminal-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+              <pre><code>docker compose exec db psql -U postgres -d research_agent
+
+select id, topic, status
+from research_tasks
+order by created_at desc
+limit 5;</code></pre>
+            </article>
+            <article class="terminal">
+              <div class="terminal-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+              <pre><code>pytest -v
+pytest tests/integration/test_persisted_task_flow.py -v
+pytest tests/tools/test_tavily_search_provider.py -v
+
+make docker-up
+make worker
+make test</code></pre>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="demo">
+        <div class="inner">
+          <h2>Static workflow demo</h2>
+          <p class="lead">
+            This page is static, but the flow mirrors the backend: task created, research runs, critic reviews, report is written from accepted findings.
+          </p>
+          <div class="demo">
+            <div class="demo-toolbar">
+              <div><strong id="demo-title"></strong> <span class="tag" id="demo-status"></span></div>
+              <div class="demo-buttons">
+                <button data-state="task">Task</button>
+                <button data-state="research">Research</button>
+                <button data-state="critic">Critic</button>
+                <button data-state="report">Report</button>
+              </div>
+            </div>
+            <div class="demo-grid">
+              <section class="pane">
+                <h3>Brief board</h3>
+                <div id="briefs"></div>
+              </section>
+              <section class="pane">
+                <h3>Evidence trail</h3>
+                <div id="evidence"></div>
+              </section>
+              <section class="pane">
+                <h3>Report preview</h3>
+                <p id="report" class="muted"></p>
+              </section>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="architecture">
+        <div class="inner">
+          <h2>Architecture</h2>
+          <p class="lead">
+            Each layer has one job. The database is the source of truth, not an afterthought.
+          </p>
+          <div class="flow">
+            <div class="node"><strong>FastAPI</strong><small>forms, JSON APIs, health checks</small></div>
+            <div class="node"><strong>Redis</strong><small>broker for queued jobs</small></div>
+            <div class="node"><strong>Celery</strong><small>background research execution</small></div>
+            <div class="node"><strong>Tavily</strong><small>real search provider</small></div>
+            <div class="node"><strong>Critic</strong><small>filters weak findings</small></div>
+            <div class="node"><strong>Postgres</strong><small>tasks, citations, reports</small></div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div class="inner">
+        Built as a practical AI Agent Engineer project. No stock graphics, no fake dashboard screenshot. The useful part is the workflow and the evidence trail.
+      </div>
+    </footer>
+    <script src="demo.js"></script>
+  </body>
+</html>
