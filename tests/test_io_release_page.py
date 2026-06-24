@@ -7,6 +7,7 @@ def test_io_release_page_uses_engineering_project_copy() -> None:
 
     assert "<img" not in page
     assert "background-image" not in styles
+    assert Path("io/.nojekyll").exists()
     assert "No images. Just the system." in page
     assert "Terminal usage" in page
     assert "docker compose up --build" in page
