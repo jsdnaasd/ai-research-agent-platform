@@ -1,59 +1,88 @@
 # AI Research Agent Platform
 
-A supervised multi-agent research backend for company intelligence, market scans, and evidence-backed reports.
+Supervised research-agent backend for creating evidence-backed market or company reports.
 
-中文简单说：这是一个可落地的 AI Agent 工程项目，不是聊天机器人套壳。它把一次 research job 拆成 planner、researcher、critic、report builder 几个阶段，用 Celery 跑后台任务，用 PostgreSQL 保存 brief、source、source fragment、finding 和 report。最后生成的结论可以回到原始来源片段，不只是给你一段看起来顺滑的总结。
+中文说明：这是一个后端工程项目，用 FastAPI、Celery、PostgreSQL 和 Redis 组织一次 research job。系统会保存 task、brief、source、source fragment、finding 和 report，让报告结论可以回到来源片段。
 
-[Project page / Demo](https://jsdnaasd.github.io/ai-research-agent-platform/) · [Repository](https://github.com/jsdnaasd/ai-research-agent-platform)
+[Project page](https://jsdnaasd.github.io/ai-research-agent-platform/) · [Repository](https://github.com/jsdnaasd/ai-research-agent-platform)
 
-## What This Project Does
+<p align="center">
+  <img src="io/assets/project-page.png" alt="AI Research Agent Platform project page screenshot" width="100%" />
+</p>
 
-- Accepts research tasks from HTML pages or JSON APIs.
-- Splits a topic into research briefs.
-- Calls a real search provider through the Tavily provider interface.
-- Stores sources and source fragments before writing the final report.
-- Runs critic validation so weak findings do not silently enter the report.
-- Persists task status, worker failures, briefs, findings, citation links, and final reports.
-- Exposes the same artifacts through browser pages and API endpoints.
+## What Is Implemented
 
-The important part is traceability. If a report says something, the app keeps the fragments used to support that claim.
+- FastAPI app with HTML pages and JSON APIs.
+- Celery worker for background research jobs.
+- Redis broker for task queueing.
+- PostgreSQL persistence through SQLAlchemy models.
+- Alembic migrations for database schema.
+- Planner, researcher, critic, and report-builder stages.
+- Tavily search provider interface for live web search.
+- Stored sources and source fragments before report generation.
+- Findings linked back to supporting source fragments.
+- Health checks, task status APIs, and artifact inspection routes.
+- Pytest coverage for API, models, orchestration, worker enqueueing, web pages, and provider validation.
+- Static GitHub Pages project page in [`io/`](io/).
+
+中文：
+
+- FastAPI 提供 HTML 页面和 JSON API。
+- Celery worker 执行后台 research job。
+- Redis 作为任务队列 broker。
+- PostgreSQL 保存任务和研究过程产物。
+- Alembic 管理数据库迁移。
+- 流程拆成 planner、researcher、critic、report builder。
+- 通过 Tavily provider 做真实搜索接口。
+- 在生成报告前保存 source 和 source fragment。
+- finding 会关联到支撑它的来源片段。
+- 提供 health check、任务状态、brief、evidence、report 等接口。
+- 测试覆盖 API、模型、编排、worker、页面和搜索 provider。
+- [`io/`](io/) 目录提供静态项目页。
 
 ## Architecture
 
 ```mermaid
 flowchart LR
-    User[User / curl / HTML form] --> FastAPI[FastAPI app]
-    FastAPI --> Postgres[(PostgreSQL)]
-    FastAPI --> Redis[(Redis broker)]
-    Redis --> Celery[Celery worker]
-    Celery --> Planner[Planner]
-    Planner --> Researcher[Researcher]
-    Researcher --> Tavily[Tavily search]
-    Researcher --> Fragments[Sources + fragments]
-    Fragments --> Critic[Critic]
-    Critic --> Report[Report builder]
-    Report --> Postgres
-    Postgres --> API[HTML pages + JSON APIs]
+    User["User / curl / HTML form"] --> API["FastAPI app"]
+    API --> DB[("PostgreSQL")]
+    API --> Redis[("Redis broker")]
+    Redis --> Worker["Celery worker"]
+    Worker --> Planner["Planner"]
+    Planner --> Researcher["Researcher"]
+    Researcher --> Search["Tavily provider"]
+    Researcher --> Fragments["Sources + fragments"]
+    Fragments --> Critic["Critic"]
+    Critic --> Report["Report builder"]
+    Report --> DB
+    DB --> Routes["HTML pages + JSON APIs"]
 ```
 
-## Why I Built It
+The important design decision is that intermediate artifacts are persisted. A report is not only a final markdown string; the database also keeps the briefs, sources, fragments, findings, critic status, and failure states used to produce it.
 
-Most AI research demos stop too early. They search the web, summarize a few snippets, and show a final paragraph. That looks fine in a demo, but it is hard to trust.
+中文：这个项目的重点不是只生成一段总结，而是把中间产物保存下来。报告之外，数据库还保存 brief、source、fragment、finding、critic 状态和失败状态。
 
-This repo keeps the boring pieces that matter in client work:
+## Main Routes
 
-- What did the user ask for?
-- Which briefs did the planner create?
-- Which public sources did the researcher collect?
-- Which exact source fragments support each accepted finding?
-- Which findings did the critic reject or mark for expansion?
-- If the worker crashed, where is the error recorded?
-
-That makes the project useful as an AI Agent Engineer portfolio piece and as a starting point for real internal research tooling.
+```text
+GET  /
+GET  /health
+GET  /health/detailed
+POST /api/tasks
+GET  /api/tasks
+GET  /api/tasks/{id}
+GET  /api/tasks/{id}/briefs
+GET  /api/tasks/{id}/evidence
+GET  /api/tasks/{id}/report
+GET  /tasks/{id}
+GET  /tasks/{id}/briefs
+GET  /tasks/{id}/evidence
+GET  /tasks/{id}/report
+```
 
 ## Quick Start With Docker
 
-Docker is the cleanest path because the app needs PostgreSQL, Redis, FastAPI, and Celery.
+Docker is the easiest path because the app expects PostgreSQL, Redis, FastAPI, and a Celery worker.
 
 ```bash
 git clone https://github.com/jsdnaasd/ai-research-agent-platform.git
@@ -62,13 +91,19 @@ cd ai-research-agent-platform
 cp .env.example .env
 ```
 
-Edit `.env` and set `APP_TAVILY_API_KEY`.
+Edit `.env` and set:
+
+```text
+APP_TAVILY_API_KEY=your-tavily-api-key
+```
+
+Start the stack:
 
 ```bash
 docker compose up --build
 ```
 
-Open these in the browser:
+Open:
 
 ```text
 http://localhost:8000
@@ -76,27 +111,19 @@ http://localhost:8000/health
 http://localhost:8000/health/detailed
 ```
 
-Watch the worker in another terminal:
+Watch worker logs:
 
 ```bash
 docker compose logs -f worker
 ```
 
-If you only want to restart the API:
-
-```bash
-docker compose restart api
-```
-
-Stop everything:
+Stop:
 
 ```bash
 docker compose down
 ```
 
 ## Local Python Setup
-
-Use this when you want to inspect the code, run tests quickly, or work without Docker for the API process.
 
 ```bash
 python -m venv .venv
@@ -110,22 +137,16 @@ Run migrations:
 alembic upgrade head
 ```
 
-Start the API:
+Start API:
 
 ```bash
 uvicorn app.main:app --reload
 ```
 
-Start the worker in a second terminal:
+Start worker in another terminal:
 
 ```bash
 celery -A app.worker.celery_app worker --loglevel=info
-```
-
-Run tests:
-
-```bash
-pytest -v
 ```
 
 ## Make Commands
@@ -140,9 +161,7 @@ make docker-up
 make docker-down
 ```
 
-## Create A Research Task From Terminal
-
-Create a task:
+## Create A Research Task
 
 ```bash
 curl -s -X POST http://localhost:8000/api/tasks \
@@ -154,65 +173,43 @@ curl -s -X POST http://localhost:8000/api/tasks \
   }' | jq
 ```
 
-Typical response shape:
-
-```json
-{
-  "id": "8a9f5c7e-8fd4-42db-93cf-9e20c8890a21",
-  "topic": "OpenAI competitors",
-  "template_type": "market_scan",
-  "status": "queued",
-  "created_at": "2026-06-25T10:21:14.120000Z",
-  "updated_at": "2026-06-25T10:21:14.120000Z"
-}
-```
-
-Save the id:
+Check the task:
 
 ```bash
-TASK_ID="8a9f5c7e-8fd4-42db-93cf-9e20c8890a21"
-```
+TASK_ID="paste-returned-id-here"
 
-Check status:
-
-```bash
 curl -s "http://localhost:8000/api/tasks/$TASK_ID" | jq
-```
-
-List all tasks:
-
-```bash
-curl -s http://localhost:8000/api/tasks | jq
-```
-
-Read planner briefs:
-
-```bash
 curl -s "http://localhost:8000/api/tasks/$TASK_ID/briefs" | jq
-```
-
-Read evidence and citations:
-
-```bash
 curl -s "http://localhost:8000/api/tasks/$TASK_ID/evidence" | jq
-```
-
-Read the final report:
-
-```bash
 curl -s "http://localhost:8000/api/tasks/$TASK_ID/report" | jq -r .markdown_content
 ```
 
-Open the same task in the browser:
+## Tests
+
+Run the full test suite:
 
 ```bash
-open "http://localhost:8000/tasks/$TASK_ID"
-open "http://localhost:8000/tasks/$TASK_ID/briefs"
-open "http://localhost:8000/tasks/$TASK_ID/evidence"
-open "http://localhost:8000/tasks/$TASK_ID/report"
+pytest -v
 ```
 
-## Inspect The Database
+Useful focused checks:
+
+```bash
+pytest tests/api -v
+pytest tests/integration/test_persisted_task_flow.py -v
+pytest tests/services/test_orchestrator_rounds.py -v
+pytest tests/tools/test_tavily_search_provider.py -v
+pytest tests/web/test_task_pages.py -v
+```
+
+Static project page check:
+
+```bash
+python3 -m http.server 5173 --directory io
+curl -I http://localhost:5173
+```
+
+## Database Inspection
 
 With Docker running:
 
@@ -245,92 +242,42 @@ join research_sources s on s.id = sf.source_id
 limit 10;
 ```
 
-## Main Routes
+## Known Limitations
 
-```text
-GET  /
-GET  /health
-GET  /health/detailed
-POST /api/tasks
-GET  /api/tasks
-GET  /api/tasks/{id}
-GET  /api/tasks/{id}/briefs
-GET  /api/tasks/{id}/evidence
-GET  /api/tasks/{id}/report
-GET  /tasks/{id}
-GET  /tasks/{id}/briefs
-GET  /tasks/{id}/evidence
-GET  /tasks/{id}/report
-```
+- The project needs PostgreSQL and Redis for the full workflow.
+- Real research tasks require a Tavily API key.
+- There is no authentication or multi-user permission model yet.
+- The search provider abstraction exists, but only the Tavily path is implemented.
+- The critic is rule/schema oriented; it is not a full evaluation framework.
+- The GitHub Pages site is a static project page, not the running backend.
+- No production deployment manifests are included beyond Docker Compose.
 
-## Data Model
+中文限制：
 
-The core tables are:
+- 完整流程需要 PostgreSQL 和 Redis。
+- 真实搜索任务需要 Tavily API key。
+- 目前没有用户认证和多租户权限。
+- 搜索 provider 有抽象，但当前主要实现 Tavily。
+- critic 还不是完整评测系统。
+- GitHub Pages 只是静态项目页，不是后端服务本身。
+- 除 Docker Compose 外，还没有生产部署配置。
 
-```text
-research_tasks
-research_rounds
-research_briefs
-research_sources
-research_source_fragments
-research_findings
-research_finding_source_fragments
-research_reports
-```
+## Roadmap
 
-`research_finding_source_fragments` is the table that matters most. It connects accepted findings to the exact fragments used as evidence.
+- Add authentication and per-user task ownership.
+- Add more search providers.
+- Add retry and rate-limit controls around search calls.
+- Add report export formats.
+- Add source quality scoring.
+- Add a small evaluation dataset for research quality.
+- Add deployment notes for a cloud VM or container platform.
 
-## Environment Variables
+中文下一步：
 
-```bash
-APP_APP_NAME="AI Research Agent Platform"
-APP_DATABASE_URL="postgresql+psycopg://postgres:postgres@localhost:5432/research_agent"
-APP_REDIS_URL="redis://localhost:6379/0"
-APP_TAVILY_API_KEY="your-tavily-api-key"
-```
-
-`.env.example` contains a Docker-oriented template.
-
-## Troubleshooting
-
-Check whether the API can reach the database:
-
-```bash
-curl -s http://localhost:8000/health/detailed | jq
-```
-
-Check worker logs:
-
-```bash
-docker compose logs -f worker
-```
-
-Run migrations again:
-
-```bash
-docker compose exec api alembic upgrade head
-```
-
-Rebuild from scratch:
-
-```bash
-docker compose down -v
-docker compose up --build
-```
-
-Run one focused test file:
-
-```bash
-pytest tests/integration/test_persisted_task_flow.py -v
-```
-
-## Current Limits
-
-- The critic is rule-based. It is written so model-assisted review can be added later.
-- The browser UI is server-rendered. That keeps the repo easier to read.
-- Tavily is the only real search provider wired in today.
-- Auth is not included. A client deployment should add auth before exposing it publicly.
-
-## Why This Is Worth Reading
-
-The repo shows the practical side of AI agent engineering: background jobs, state transitions, persistence, evidence handling, API design, and failure visibility. The code is intentionally plain enough that another engineer can clone it, run it, and modify one layer without unpacking a giant framework first.
+- 增加认证和任务归属。
+- 增加更多搜索 provider。
+- 给搜索调用加重试和限速。
+- 支持报告导出。
+- 增加来源质量评分。
+- 增加研究质量评测样例。
+- 补充云服务器或容器平台部署说明。
